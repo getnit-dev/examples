@@ -1,0 +1,12 @@
+[package]
+name = "rust-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rust-cli"
+path = "src/main.rs"
+
+[lib]
+name = "rust_cli"
+path = "src/lib.rs"

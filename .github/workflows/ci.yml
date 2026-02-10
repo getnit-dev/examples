@@ -1,0 +1,241 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  repository_dispatch:
+    types: [nit-integration-test]
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  OLLAMA_HOST: http://localhost:11434
+  OLLAMA_MODEL: tinyllama
+
+jobs:
+  heuristics:
+    name: "Heuristics — ${{ matrix.project }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: nextjs-app
+            toolchains: "node"
+            setup: "cd nextjs-app && npm install"
+          - project: python-api
+            toolchains: "python-venv"
+            setup: |
+              cd python-api
+              python -m venv .venv
+              .venv/bin/pip install -e ".[dev]"
+          - project: go-api
+            toolchains: "go"
+            setup: "cd go-api && go mod download"
+          - project: cpp-cmake
+            toolchains: "cmake"
+            setup: |
+              cd cpp-cmake
+              mkdir -p build
+              cd build && cmake .. && cmake --build .
+          - project: java-gradle
+            toolchains: "java gradle"
+            setup: "cd java-gradle && gradle build"
+          - project: rust-cli
+            toolchains: "rust"
+            setup: "cd rust-cli && cargo build"
+          - project: csharp-dotnet
+            toolchains: "dotnet"
+            setup: "cd csharp-dotnet && dotnet build"
+          - project: monorepo
+            toolchains: "node pnpm python-venv"
+            setup: "cd monorepo && pnpm install"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        if: contains(matrix.toolchains, 'node')
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Go
+        if: contains(matrix.toolchains, 'go')
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Set up Java
+        if: contains(matrix.toolchains, 'java')
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        if: contains(matrix.toolchains, 'gradle')
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up .NET
+        if: contains(matrix.toolchains, 'dotnet')
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Set up Rust
+        if: contains(matrix.toolchains, 'rust')
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install CMake and Google Test
+        if: contains(matrix.toolchains, 'cmake')
+        run: sudo apt-get update && sudo apt-get install -y cmake libgtest-dev
+
+      - name: Install pnpm
+        if: contains(matrix.toolchains, 'pnpm')
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install nit
+        run: pip install "getnit @ git+https://github.com/getnit-dev/nit.git@main"
+
+      - name: Install test dependencies
+        run: pip install pytest pytest-timeout httpx
+
+      - name: Set up project
+        run: ${{ matrix.setup }}
+
+      - name: Run heuristics tests
+        run: pytest tests/heuristics/ -v --tb=short -k "${{ matrix.project }}"
+
+  llm:
+    name: "LLM — ${{ matrix.project }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - project: nextjs-app
+            toolchains: "node"
+            setup: "cd nextjs-app && npm install"
+          - project: python-api
+            toolchains: "python-venv"
+            setup: |
+              cd python-api
+              python -m venv .venv
+              .venv/bin/pip install -e ".[dev]"
+          - project: go-api
+            toolchains: "go"
+            setup: "cd go-api && go mod download"
+          - project: cpp-cmake
+            toolchains: "cmake"
+            setup: |
+              cd cpp-cmake
+              mkdir -p build
+              cd build && cmake .. && cmake --build .
+          - project: java-gradle
+            toolchains: "java gradle"
+            setup: "cd java-gradle && gradle build"
+          - project: rust-cli
+            toolchains: "rust"
+            setup: "cd rust-cli && cargo build"
+          - project: csharp-dotnet
+            toolchains: "dotnet"
+            setup: "cd csharp-dotnet && dotnet build"
+          - project: monorepo
+            toolchains: "node pnpm python-venv"
+            setup: "cd monorepo && pnpm install"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        if: contains(matrix.toolchains, 'node')
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Go
+        if: contains(matrix.toolchains, 'go')
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Set up Java
+        if: contains(matrix.toolchains, 'java')
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        if: contains(matrix.toolchains, 'gradle')
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up .NET
+        if: contains(matrix.toolchains, 'dotnet')
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Set up Rust
+        if: contains(matrix.toolchains, 'rust')
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install CMake and Google Test
+        if: contains(matrix.toolchains, 'cmake')
+        run: sudo apt-get update && sudo apt-get install -y cmake libgtest-dev
+
+      - name: Install pnpm
+        if: contains(matrix.toolchains, 'pnpm')
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama and pull model
+        run: |
+          ollama serve &
+          sleep 5
+          ollama pull $OLLAMA_MODEL
+
+      - name: Verify Ollama is ready
+        run: |
+          curl -sf $OLLAMA_HOST/api/tags | python -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          models = data.get('models', [])
+          print(f'Ollama ready with {len(models)} model(s)')
+          assert len(models) > 0, 'No models available'
+          "
+
+      - name: Install nit
+        run: pip install "getnit @ git+https://github.com/getnit-dev/nit.git@main"
+
+      - name: Install test dependencies
+        run: pip install pytest pytest-timeout httpx
+
+      - name: Set up project
+        run: ${{ matrix.setup }}
+
+      - name: Run LLM tests
+        run: pytest tests/llm/ -v --tb=short --timeout=600 -k "${{ matrix.project }}"

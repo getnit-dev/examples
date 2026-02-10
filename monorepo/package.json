@@ -1,0 +1,16 @@
+{
+  "name": "monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "turbo run test",
+    "build": "turbo run build"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "vitest": "^1.6.0"
+  }
+}
