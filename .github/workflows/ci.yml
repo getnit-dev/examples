@@ -229,7 +229,7 @@ jobs:
           "
 
       - name: Install CPU-only PyTorch
-        run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+        run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple
 
       - name: Install nit
         run: pip install --no-cache-dir "getnit @ git+https://github.com/getnit-dev/nit.git@main"
