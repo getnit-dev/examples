@@ -74,7 +74,7 @@ jobs:
         if: contains(matrix.toolchains, 'go')
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.22"
 
       - name: Set up Java
         if: contains(matrix.toolchains, 'java')
@@ -176,7 +176,7 @@ jobs:
         if: contains(matrix.toolchains, 'go')
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.22"
 
       - name: Set up Java
         if: contains(matrix.toolchains, 'java')
@@ -228,8 +228,11 @@ jobs:
           assert len(models) > 0, 'No models available'
           "
 
+      - name: Install CPU-only PyTorch
+        run: pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
       - name: Install nit
-        run: pip install "getnit @ git+https://github.com/getnit-dev/nit.git@main"
+        run: pip install --no-cache-dir "getnit @ git+https://github.com/getnit-dev/nit.git@main"
 
       - name: Install test dependencies
         run: pip install pytest pytest-timeout httpx
